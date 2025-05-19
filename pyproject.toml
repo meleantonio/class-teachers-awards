@@ -1,0 +1,26 @@
+[project]
+name = "class_teacher_awards"
+version = "0.1.0"
+description = "A package to generate recommendation messages for class teaching awards."
+authors = [
+    {name = "Your Name", email = "you@example.com"},
+]
+dependencies = [
+    "pandas",
+    "openpyxl",
+    "python-dotenv",
+    "openai"
+]
+requires-python = ">=3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.setuptools]
+py-modules = []
+
+# Removed [tool.rye] and [tool.hatch.metadata] as they were Rye specific or not strictly needed for basic build.
+# Ruff can be configured here if needed, e.g.
+# [tool.ruff]
+# line-length = 88 
