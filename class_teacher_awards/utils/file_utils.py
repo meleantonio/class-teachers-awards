@@ -1,5 +1,18 @@
 import os
 from ..config import RECOMMENDATION_DIR
+import docx # For reading .docx files
+
+def read_docx_file(file_path: str) -> str:
+    """Reads the text content from a .docx file."""
+    try:
+        doc = docx.Document(file_path)
+        full_text = []
+        for para in doc.paragraphs:
+            full_text.append(para.text)
+        return '\n'.join(full_text)
+    except Exception as e:
+        print(f"Error reading DOCX file {file_path}: {e}")
+        return ""
 
 def save_markdown_message(teacher_name: str, message_content: str) -> bool:
     """

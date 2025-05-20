@@ -1,6 +1,7 @@
 import openai
 from typing import List, Dict
-from ..config import OPENAI_API_KEY, GPT_MODEL
+from ..config import OPENAI_API_KEY, GPT_MODEL, EXAMPLE_DOCX_FILES
+from ..utils.file_utils import read_docx_file
 
 # Initialize OpenAI client
 # It's good practice to initialize the client once, possibly here or in config.
@@ -43,6 +44,18 @@ def generate_recommendation_message(teacher_name: str,
     elif not first_name: # Fallback if teacher_name was empty or very unusual
         first_name = teacher_name # Use full name if first name extraction fails
 
+    # Load example recommendations
+    example_texts = []
+    if EXAMPLE_DOCX_FILES:
+        print(f"Loading {len(EXAMPLE_DOCX_FILES)} example .docx files for style guidance...")
+        for i, example_file in enumerate(EXAMPLE_DOCX_FILES):
+            print(f"  Reading example: {example_file}")
+            content = read_docx_file(example_file)
+            if content:
+                example_texts.append(f"--- Example {i+1} ---\n{content}\n--- End of Example {i+1} ---")
+            else:
+                print(f"    Warning: Could not read content from example file: {example_file}")
+    
     # Construct the prompt for GPT-4o
     prompt_parts = []
     prompt_parts.append(f"Task: Create a compelling and concise recommendation message (up to 4000 characters) for a teaching award for {teacher_name}.")
@@ -83,6 +96,15 @@ def generate_recommendation_message(teacher_name: str,
     prompt_parts.append("- Do NOT include a title like 'Recommendation Message:' in your generated text. The surrounding template will handle titles.")
     prompt_parts.append("- The generated text will be placed within a template, so just provide the message body.")
 
+    if example_texts:
+        prompt_parts.append("\n\nTo guide the style, tone, and structure of your response, please refer to the following examples of high-quality recommendation messages.")
+        prompt_parts.append("Adapt your generated message to a similar style, while primarily using the specific student feedback and professor opinions provided above for the teacher.")
+        prompt_parts.append("Do NOT copy directly from these examples, but use them as a reference for the desired output quality and narrative flow.")
+        prompt_parts.append("\n".join(example_texts))
+        prompt_parts.append(f"\nNow, using the student feedback and professor opinions specifically for {teacher_name}, and keeping the style of the above examples in mind, generate the recommendation message for {teacher_name}.")
+    else:
+        prompt_parts.append(f"\nNow, using the student feedback and professor opinions specifically for {teacher_name}, generate the recommendation message.")
+
     full_prompt = "\n".join(prompt_parts)
 
     # print(f"\n--- OpenAI Prompt for {teacher_name} ---")
@@ -93,7 +115,7 @@ def generate_recommendation_message(teacher_name: str,
         response = client.chat.completions.create(
             model=GPT_MODEL,
             messages=[
-                {"role": "system", "content": "You are an assistant helping to draft teaching award recommendations. Your output should be only the recommendation message text itself, ready to be embedded in a larger document. Adhere strictly to character limits if specified elsewhere, though the primary goal is a strong recommendation based on provided inputs. Do not add any extra conversational text or markdown formatting like ## or titles within your direct output."},
+                {"role": "system", "content": "You are an assistant helping to draft teaching award recommendations. Your output should be only the recommendation message text itself, ready to be embedded in a larger document. Adhere strictly to character limits if specified elsewhere, though the primary goal is a strong recommendation based on provided inputs. Do not add any extra conversational text or markdown formatting like ## or titles within your direct output. If examples of desired style are provided by the user, pay close attention to them to guide your response's tone, structure, and narrative flow while ensuring the core content is derived from the specific data given for the teacher being evaluated."},
                 {"role": "user", "content": full_prompt}
             ],
             max_tokens=1000  # Adjust as needed, 4000 chars is ~1000 tokens. Prompt says "up to 4000 characters" for the *final message including template*.

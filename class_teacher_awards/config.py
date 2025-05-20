@@ -15,5 +15,8 @@ POSITIVE_FEEDBACK_SHEET_NAME = "Instructor feedback - positive"
 # EML file paths - now dynamically finds all .eml files in assets
 EML_FILE_PATHS = glob.glob("assets/*.eml")
 
+# Example DOCX file paths for guiding style and tone
+EXAMPLE_DOCX_FILES = glob.glob("examples/*.docx")
+
 # Output directory
 RECOMMENDATION_DIR = "recommendation_messages" 
