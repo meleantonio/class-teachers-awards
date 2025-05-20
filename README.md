@@ -1,11 +1,12 @@
 # Class Teacher Awards Recommendation Generator
 
-This Python package automates the generation of recommendation messages for class teaching awards. It extracts information about teachers from Excel files (student feedback) and EML files (professor opinions), then uses OpenAI's GPT-4o model to craft personalized recommendation messages.
+This Python package automates the generation of recommendation messages for class teaching awards. It extracts information about teachers from Excel files (student feedback) and EML files (professor opinions), then uses OpenAI's GPT-4o model to craft personalized recommendation messages. The style and tone of these messages can be guided by providing example recommendation documents (.docx files) in an `examples` folder.
 
 ## Features
 
 - Parses student feedback from multiple Excel files.
-- Extracts professor opinions from EML email files.
+- Extracts professor opinions from EML email files (dynamically discovers all `.eml` files in the `assets` folder).
+- Reads example recommendation `.docx` files from an `examples` folder to guide generation style.
 - Utilizes OpenAI GPT-4o for generating recommendation narratives.
 - Formats messages in Markdown, ready for submission.
 - Saves each recommendation to a separate file named after the teacher.
@@ -22,8 +23,9 @@ class-teachers-awards/
 │   │   └── eml_parser.py
 │   ├── llm/                  # Module for OpenAI API interaction
 │   │   ├── __init__.py
+│   │   ├── alias_generator.py
 │   │   └── message_generator.py
-│   ├── utils/                # Utility functions (e.g., file saving)
+│   ├── utils/                # Utility functions (e.g., file saving, docx reading)
 │   │   ├── __init__.py
 │   │   └── file_utils.py
 │   ├── config.py           # Configuration (file paths, API model)
@@ -32,12 +34,14 @@ class-teachers-awards/
 │   └── ... 
 ├── assets/                 # Input data files (Excel, EML)
 │   └── ... 
+├── examples/               # Example .docx recommendation files for style guidance
+│   └── ...
 ├── recommendation_messages/  # Output directory for generated Markdown files
 ├── .env                    # For storing OpenAI API Key (MUST BE CREATED MANUALLY)
 ├── .gitignore
 ├── README.md
 ├── pyproject.toml          # Project metadata and build system configuration
-├── requirements.txt        # Runtime dependencies
+├── requirements.txt        # Runtime dependencies (includes pandas, openpyxl, python-dotenv, openai, python-docx)
 └── requirements-dev.txt    # Development dependencies
 ```
 
@@ -66,17 +70,13 @@ class-teachers-awards/
         ```
 
 4.  **Install Dependencies:**
-    Install the runtime dependencies:
+    Install the runtime dependencies (this includes `python-docx` for reading example files):
     ```bash
     pip install -r requirements.txt
     ```
     Install the development dependencies (for testing and linting):
     ```bash
     pip install -r requirements-dev.txt
-    ```
-    Alternatively, you can install the package itself in editable mode along with its dependencies (if `pyproject.toml` is set up for it, though `requirements.txt` is more direct for now):
-    ```bash
-    # pip install -e . 
     ```
 
 5.  **Create `.env` file:**
@@ -86,9 +86,12 @@ class-teachers-awards/
     ```
     Replace `"your_openai_api_key_here"` with your actual key.
 
+6.  **(Optional) Create `examples` folder:**
+    If you wish to guide the style and tone of the generated recommendations, create a folder named `examples` in the project root. Place one or more `.docx` files containing example recommendation messages in this folder. The system will automatically detect and use them.
+
 ## Usage
 
-Once the setup is complete, the virtual environment is activated, and your `assets` directory is populated with the required data files (as specified in `prompt.md` and `class_teacher_awards/config.py`), you can run the main script.
+Once the setup is complete, the virtual environment is activated, and your `assets` directory is populated with the required data files (and optionally, the `examples` directory with your `.docx` files), you can run the main script.
 
 To generate recommendation messages for **all** teachers found in the data sources:
 
@@ -144,7 +147,7 @@ The generated markdown files will be saved in the `recommendation_messages/` dir
 
 ## Data Files
 
-The application expects the following data files in the `assets/` directory (paths can be configured in `class_teacher_awards/config.py`):
+The application expects the following data files (paths can be configured in `class_teacher_awards/config.py`):
 
 -   **Student Feedback (Excel):**
     -   `assets/Economics AT 24 Results.xlsx` (Sheet: `Instructor feedback - positive`)
@@ -152,9 +155,10 @@ The application expects the following data files in the `assets/` directory (pat
     *(Note: The Excel parser attempts to find instructor and comment columns dynamically but works best if column names like "Instructor Name" or "Instructor" and comment columns with "positive comments" are used.)*
 
 -   **Professor Opinions (EML):**
-    -   `assets/Class teacher bonuses & prizes - your views.eml`
-    -   `assets/RE_ Class teacher bonuses & prizes - EC2C1.eml`
-    -   `assets/Re_ Class teacher bonuses & prizes -- recommendation.eml`
+    -   All `.eml` files placed in the `assets/` directory will be automatically processed.
+
+-   **Example Recommendation Files (.docx) (Optional):**
+    -   Any `.docx` files placed in an `examples/` directory at the project root will be used to guide the style and tone of the generated recommendations.
 
 ## Development
 
@@ -186,7 +190,9 @@ ruff format .
 
 Key configurations are managed in `class_teacher_awards/config.py`:
 -   OpenAI Model (`GPT_MODEL`)
--   File paths for Excel and EML data sources.
+-   File paths for Excel data sources (`ECONOMICS_AT24_RESULTS_FILE`, `ECONOMICS_WT25_SURVEY_FILE`).
+-   Path pattern for EML files (`EML_FILE_PATHS = glob.glob("assets/*.eml")`).
+-   Path pattern for example DOCX files (`EXAMPLE_DOCX_FILES = glob.glob("examples/*.docx")`).
 -   Output directory for recommendations (`RECOMMENDATION_DIR`).
 
 The OpenAI API key is loaded from the `.env` file. 
